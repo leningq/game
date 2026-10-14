@@ -1,0 +1,145 @@
+
+/* основные настройки */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: #ffffff;
+    color: #202124;
+    font-family: Arial, sans-serif;
+}
+
+/* верхняя панель */
+header {
+    background-color: #262626;
+    padding: 0 30px;
+}
+
+/* содержимое шапки */
+.header-content {
+    max-width: 1100px;
+    height: 85px;
+    margin: auto;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* название игры */
+header h2 {
+    color: white;
+    font-size: 28px;
+    margin: 0;
+}
+
+/* ссылки в шапке */
+nav {
+    display: flex;
+    gap: 35px;
+}
+
+nav a {
+    color: #dddddd;
+    font-size: 17px;
+    text-decoration: none;
+}
+
+/* цвет ссылки при наведении */
+nav a:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+/* основное содержимое */
+main {
+    max-width: 1000px;
+    margin: 90px auto;
+    padding: 0 20px;
+}
+
+/* заголовок страницы */
+h1 {
+    text-align: center;
+    font-size: 46px;
+    margin-bottom: 50px;
+}
+
+/* таблица лидеров */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* названия столбцов */
+th {
+    background-color: #f1f2f4;
+    color: #555555;
+    text-align: left;
+    font-size: 17px;
+    font-weight: normal;
+    padding: 22px 30px;
+}
+
+/* строки игроков */
+td {
+    padding: 22px 30px;
+    font-size: 17px;
+    border-top: 1px solid #dddddd;
+}
+
+/* ширина столбца с местом */
+th:first-child,
+td:first-child {
+    width: 15%;
+    text-align: center;
+}
+
+/* ширина столбца с очками */
+th:last-child,
+td:last-child {
+    width: 25%;
+    text-align: center;
+}
+
+/* подсветка при наведении */
+tbody tr:hover {
+    background-color: #f7f7f7;
+}
+
+/* оформление для маленьких экранов */
+@media (max-width: 600px) {
+    .header-content {
+        height: 70px;
+    }
+
+    header h2 {
+        font-size: 22px;
+    }
+
+    nav {
+        gap: 15px;
+    }
+
+    nav a {
+        font-size: 14px;
+    }
+
+    main {
+        margin: 50px auto;
+    }
+
+    h1 {
+        font-size: 34px;
+    }
+
+    th, td {
+        padding: 16px 12px;
+        font-size: 14px;
+    }
+}

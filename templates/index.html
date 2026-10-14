@@ -1,0 +1,30 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- название страницы -->
+<h1>Leaderboard</h1>
+
+<!-- таблица игроков -->
+<table>
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Score</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for player in players %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ player.score }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
