@@ -1,37 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Game Rules · Brickfall{% endblock %}
+{% block title %}Rules · Brickfall{% endblock %}
 {% block content %}
 <div class="page-heading">
-    <p class="eyebrow">A SMALL GUIDE</p>
-    <h1>Game Rules</h1>
+    <h1>Rules</h1>
     <p class="description">Keep the ball in play. Clear every brick.</p>
 </div>
 <div class="rules-content">
-    <section>
+    <section class="rules-section">
         <h2>The goal</h2>
-        <p>Move the paddle to bounce the ball into the bricks. Complete all three levels to win. You start with three lives and lose one when the ball falls below the paddle. The ball moves faster on each level.</p>
-        <p>Each brick is worth <strong>10 points</strong>. A completed run is sent to the server under your player name. Your best score earns your place on the leaderboard.</p>
+        <div><p>Bounce the ball with your paddle and clear all three levels. You start with three lives; each missed ball costs one. Every brick earns 10 points.</p><p>Sign in inside the game to save your progress and send your completed games to the leaderboard.</p></div>
     </section>
-    <section>
+    <section class="rules-section">
         <h2>Controls</h2>
         <dl class="controls">
             <div><dt><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd></dt><dd>Move the paddle</dd></div>
             <div><dt><kbd>Space</kbd></dt><dd>Launch the ball</dd></div>
             <div><dt><kbd>Shift</kbd></dt><dd>Slow the ball, once per level</dd></div>
-            <div><dt><kbd>P</kbd></dt><dd>Pause or continue</dd></div>
-            <div><dt><kbd>Esc</kbd></dt><dd>Pause; press again to return to the menu</dd></div>
+            <div><dt><kbd>P</kbd> or <kbd>Esc</kbd></dt><dd>Pause; press P to continue or Esc to return to the menu</dd></div>
             <div><dt><kbd>F5</kbd></dt><dd>Pause and save your current game</dd></div>
             <div><dt><kbd>F9</kbd></dt><dd>Load your saved game from the menu or pause screen</dd></div>
         </dl>
     </section>
-    <section>
-        <h2>Two special mechanics</h2>
-        <div class="mechanic"><span class="mechanic-number">01</span><div><h3>A narrower paddle</h3><p>After every five destroyed bricks, the paddle becomes narrower for three seconds. It then returns to its normal width.</p></div></div>
-        <div class="mechanic"><span class="mechanic-number">02</span><div><h3>A moment to slow down</h3><p>Press Shift while the ball is moving to slow it for three seconds. You get one use per level. Losing a life does not restore that use.</p></div></div>
-    </section>
-    <section>
-        <h2>Your progress</h2>
-        <p>Register or sign in inside the Pygame application. Save an unfinished game to your account, then load it later. The website shows scores and player statistics from the same server database.</p>
+    <section class="rules-section">
+        <h2>Two small twists</h2>
+        <div class="mechanics">
+            <div><h3>A narrower paddle</h3><p>Every five destroyed bricks make the paddle narrower for three seconds. It then returns to its normal width.</p></div>
+            <div><h3>A moment to slow down</h3><p>Press Shift while the ball is moving to slow it for three seconds. You get one use per level. Losing a life does not restore it.</p></div>
+        </div>
     </section>
 </div>
 {% endblock %}

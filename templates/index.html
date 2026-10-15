@@ -2,28 +2,27 @@
 {% block title %}Leaderboard · Brickfall{% endblock %}
 {% block content %}
 <div class="page-heading">
-    <p class="eyebrow">THE BEST RUNS</p>
     <h1>Leaderboard</h1>
-    <p class="description">The top 10 players, ranked by their best score.</p>
+    <p class="description">Top players ranked by their best score.</p>
 </div>
 <div class="table-wrap">
     <table class="leaderboard">
-        <caption class="visually-hidden">Best result for each player</caption>
+        <caption class="visually-hidden">Best score for each player</caption>
         <thead>
-            <tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th></tr>
+            <tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best Score</th></tr>
         </thead>
         <tbody>
             {% for player in players %}
-            <tr>
+            <tr{% if loop.index <= 3 %} class="top-place place-{{ loop.index }}"{% endif %}>
                 <td class="rank">{{ "%02d"|format(loop.index) }}</td>
                 <td><a class="player-link" href="{{ request.url_for('player_profile', name=player.name) }}">{{ player.name }}</a></td>
                 <td class="score">{{ player.score }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="empty-state">No results yet. Finish a game to appear here.</td></tr>
+            <tr><td colspan="3" class="empty-state">No scores yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-<p class="table-note">One player, one place. Results are saved from the Brickfall game.</p>
+<p class="table-note">One place per player. Your best game counts.</p>
 {% endblock %}

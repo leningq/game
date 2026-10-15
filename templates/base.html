@@ -10,16 +10,16 @@
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
         <div class="header-content">
-            <a class="brand" href="/" aria-label="Brickfall home"><span class="brand-mark" aria-hidden="true"></span>Brickfall</a>
+            <a class="brand" href="/" aria-label="Brickfall home">BRICKFALL</a>
             <nav aria-label="Main navigation">
                 <a href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}>Leaderboard</a>
-                <a href="/rules" {% if request.url.path == '/rules' %}aria-current="page"{% endif %}>Game Rules</a>
+                <a href="/rules" {% if request.url.path == '/rules' %}aria-current="page"{% endif %}>Rules</a>
             </nav>
         </div>
     </header>
     <main id="main">
         {% block content %}{% endblock %}
     </main>
-    <footer class="site-footer">Brickfall <span aria-hidden="true">/</span> Three levels. Every brick counts.</footer>
+    <footer class="site-footer"><span>Brickfall</span><span>Three levels. Every brick counts.</span></footer>
 </body>
 </html>
