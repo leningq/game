@@ -66,7 +66,7 @@ Vienam spēlētājam ir viens pēdējais saglabājums.
 
 Pabeigtas spēles rezultāts nonāk tajā pašā datubāzē.
 Mājaslapā ir top-10 pēc katra spēlētāja labākā rezultāta, profils ar
-statistiku un noteikumi. Mājaslapai ir balts fons, tumša galvene,
+statistiku un noteikumi. Mājaslapai ir balts fons, gaiša galvene,
 vienkārša tabula un pielāgojums nelieliem ekrāniem.
 Izdomātu rezultātu nav.
 
