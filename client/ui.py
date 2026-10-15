@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import pygame
 
 
@@ -5,8 +8,8 @@ import pygame
 BG = (13, 20, 26)
 PANEL = (20, 29, 36)
 LINE = (43, 58, 65)
-TEXT = (237, 242, 235)
-MUTED = (143, 161, 163)
+TEXT = (245, 247, 250)
+MUTED = (191, 200, 208)
 MINT = (156, 218, 195)
 CORAL = (229, 151, 134)
 GOLD = (222, 192, 131)
@@ -15,13 +18,18 @@ fonts = {}
 button_progress = {}
 demo_visibility = 1.0
 def initialize_fonts():
-    # Если Segoe UI нет, SysFont автоматически подставит доступный шрифт.
+    # SysFont на Windows может выбрать Segoe UI Light, поэтому указываем начертание.
+    font_dir = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
     for name, size, bold in (
-        ("title", 72, True), ("heading", 34, True), ("number", 18, False),
-        ("body", 20, False), ("button", 18, False), ("small", 14, False),
-        ("tiny", 11, False), ("logo", 16, False),
+        ("title", 72, True), ("heading", 36, True), ("number", 26, True),
+        ("body", 22, False), ("button", 20, True), ("small", 18, False),
+        ("tiny", 16, True), ("logo", 18, True),
     ):
-        fonts[name] = pygame.font.SysFont("segoeui,arial", size, bold=bold)
+        font_file = font_dir / ("segoeuib.ttf" if bold else "segoeui.ttf")
+        fallback = pygame.font.match_font("arial,dejavusans", bold=bold)
+        fonts[name] = pygame.font.Font(str(font_file) if font_file.is_file() else fallback, size)
+        if bold and not font_file.is_file() and fallback is None:
+            fonts[name].set_bold(True)
 
 
 def text(surface, value, pos, size="small", color=TEXT, center=False):
@@ -98,12 +106,13 @@ def draw_particles(surface, particles):
                            (round(particle["x"]), round(particle["y"])), radius)
 
 
-def update_animations(state, selected_button, dt, demo_resetting=False):
+def update_animations(state, selected_button, dt, demo_resetting=False, mouse_pos=None):
     global demo_visibility
     # Небольшая интерполяция вместо резкого включения подсветки.
     step = min(1.0, max(0.0, dt) / 0.12)
+    mouse_pos = pygame.mouse.get_pos() if mouse_pos is None else mouse_pos
     for index, (action, rect) in enumerate(buttons_for_state(state).items()):
-        active = rect.collidepoint(pygame.mouse.get_pos())
+        active = rect.collidepoint(mouse_pos)
         active = active or (state == "menu" and selected_button == index)
         key = tuple(rect)
         previous = button_progress.get(key, 0.0)
@@ -114,8 +123,8 @@ def update_animations(state, selected_button, dt, demo_resetting=False):
 
 def draw_game_background(surface):
     draw_base(surface)
-    pygame.draw.rect(surface, PANEL, (24, 18, 852, 60), border_radius=12)
-    pygame.draw.rect(surface, LINE, (24, 18, 852, 60), 1, border_radius=12)
+    pygame.draw.rect(surface, PANEL, (24, 18, 852, 68), border_radius=12)
+    pygame.draw.rect(surface, LINE, (24, 18, 852, 68), 1, border_radius=12)
     # Нижняя сторона открыта: за ней игрок теряет жизнь.
     pygame.draw.line(surface, LINE, (24, 96), (876, 96))
     pygame.draw.line(surface, LINE, (24, 96), (24, 556))
@@ -133,7 +142,7 @@ END_BUTTONS = {
     "menu": pygame.Rect(286, 400, 328, 40),
 }
 CONTROLS_BUTTONS = {"menu": pygame.Rect(286, 485, 328, 40)}
-PLAY_BUTTONS = {"pause": pygame.Rect(783, 33, 74, 28)}
+PLAY_BUTTONS = {"pause": pygame.Rect(748, 30, 108, 40)}
 AUTH_FIELDS = [pygame.Rect(280, 222, 340, 42), pygame.Rect(280, 306, 340, 42)]
 
 
@@ -160,7 +169,8 @@ def buttons_for_state(state):
 def draw_menu(surface, selected_button, demo, username=None, has_run=False):
     surface.fill(BG)
     text(surface, "BRICKFALL / ARCADE", (52, 33), "small", MINT)
-    text(surface, username or "SIGN IN TO PLAY", (600, 35), "small", MUTED)
+    account_label = username or "SIGN IN TO PLAY"
+    text(surface, account_label, (848 - fonts["small"].size(account_label)[0], 33), "small", MUTED)
     pygame.draw.line(surface, LINE, (52, 76), (848, 76))
     text(surface, "BRICK", (48, 105), "title")
     text(surface, "FALL", (48, 175), "title")
@@ -188,12 +198,12 @@ def draw_menu(surface, selected_button, demo, username=None, has_run=False):
 
 
 def draw_top_bar(surface, game):
-    text(surface, "SCORE", (44, 28), "tiny", MUTED)
-    text(surface, f"{game.score:04d}", (44, 43), "number")
-    text(surface, "LEVEL", (300, 28), "tiny", MUTED)
-    text(surface, f"{game.level} / 3", (300, 43), "number")
-    text(surface, "LIVES", (557, 28), "tiny", MUTED)
-    text(surface, str(game.lives), (557, 43), "number", MINT)
+    text(surface, "SCORE", (44, 22), "tiny", MUTED)
+    text(surface, f"{game.score:04d}", (44, 44), "number")
+    text(surface, "LEVEL", (300, 22), "tiny", MUTED)
+    text(surface, f"{game.level} / 3", (300, 44), "number")
+    text(surface, "LIVES", (557, 22), "tiny", MUTED)
+    text(surface, str(game.lives), (557, 44), "number")
     draw_button(surface, PLAY_BUTTONS["pause"], "Pause")
 
 
@@ -206,7 +216,7 @@ def draw_footer(surface, game):
     if not effects:
         effects.append("SHIFT: slow used" if game.slow_used else "SHIFT: slow ready")
     text(surface, "   /   ".join(effects), (24, 548), "small", GOLD if game.shrink_timer else MINT)
-    text(surface, "Move: arrows / A D     Space: launch     Shift: slow     P / Esc: pause     F5: save", (24, 578), "small", MUTED)
+    text(surface, "Move: arrows / A D     Space: launch     Shift: slow     P / Esc: pause     F5: save", (24, 576), "tiny", MUTED)
 
 
 def draw_ready_hint(surface, level):
@@ -222,7 +232,7 @@ def draw_modal(surface, state, score, score_state=""):
     pygame.draw.rect(surface, PANEL, card, border_radius=12)
     pygame.draw.rect(surface, LINE, card, 1, border_radius=12)
     title = {"paused": "PAUSED", "win": "VICTORY", "game_over": "GAME OVER"}[state]
-    text(surface, title, (450, 190), "heading", CORAL if state == "game_over" else MINT, center=True)
+    text(surface, title, (450, 190), "heading", center=True)
     subtitle = "Your run is waiting." if state == "paused" else f"Final score: {score}"
     text(surface, subtitle, (450, 230), "body", center=True)
     if state == "paused":
@@ -258,17 +268,21 @@ def draw_controls(surface):
 
 def draw_auth(surface, state, username, password, active_field, busy):
     draw_base(surface)
-    text(surface, "BRICKFALL", (450, 90), "heading", MINT, center=True)
+    text(surface, "BRICKFALL", (450, 90), "heading", center=True)
     text(surface, "Create account" if state == "register" else "Sign in", (450, 147), "body", center=True)
     for index, (label, value, rect) in enumerate(zip(
             ("Username", "Password"), (username, "*" * len(password)), AUTH_FIELDS)):
         text(surface, label, (rect.x, rect.y - 26), "small", MUTED)
         pygame.draw.rect(surface, PANEL, rect, border_radius=6)
         pygame.draw.rect(surface, MINT if index == active_field else LINE, rect, 1, border_radius=6)
-        # Длинный пароль остаётся внутри поля.
+        # Показываем конец длинного ввода, чтобы курсор всегда был виден.
+        value += "|" if index == active_field and not busy else ""
+        image = fonts["body"].render(value, True, TEXT)
+        inner = rect.inflate(-24, -4)
         clip = surface.get_clip()
-        surface.set_clip(rect.inflate(-16, -4))
-        text(surface, value + ("|" if index == active_field and not busy else ""), (rect.x + 12, rect.y + 9), "body")
+        surface.set_clip(inner)
+        x = min(inner.x, inner.right - image.get_width())
+        surface.blit(image, (x, rect.centery - image.get_height() // 2))
         surface.set_clip(clip)
     buttons = buttons_for_state(state)
     draw_button(surface, buttons["auth"], "Connecting..." if busy else "Register" if state == "register" else "Sign in", primary=True)
@@ -280,18 +294,29 @@ def draw_auth(surface, state, username, password, active_field, busy):
 def draw_status(surface, message, error=False):
     if not message:
         return
-    words = message.split()
+    width, height = surface.get_size()
+    font = fonts["small"]
     lines, line = [], ""
-    for word in words:
+    for word in message.split():
         candidate = (line + " " + word).strip()
-        if fonts["small"].size(candidate)[0] > 840 and line:
+        if font.size(candidate)[0] > width - 48 and line:
             lines.append(line)
             line = word
         else:
             line = candidate
     lines.append(line)
+    # Статус занимает максимум две строки и не закрывает кнопки авторизации.
+    if len(lines) > 2:
+        lines[1] = " ".join(lines[1:])
     lines = lines[:2]
-    height = 10 + len(lines) * 17
-    pygame.draw.rect(surface, BG, (0, 600 - height, 900, height))
     for index, value in enumerate(lines):
-        text(surface, value, (24, 605 - height + index * 17), "small", CORAL if error else MINT)
+        if font.size(value)[0] > width - 48:
+            while value and font.size(value + "...")[0] > width - 48:
+                value = value[:-1]
+            lines[index] = value.rstrip() + "..."
+    line_height = font.get_linesize() + 4
+    box_height = 12 + len(lines) * line_height
+    pygame.draw.rect(surface, BG, (0, height - box_height, width, box_height))
+    for index, value in enumerate(lines):
+        text(surface, value, (24, height - box_height + 6 + index * line_height),
+             "small", CORAL if error else TEXT)

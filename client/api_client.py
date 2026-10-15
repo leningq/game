@@ -5,7 +5,9 @@ from urllib.request import Request, urlopen
 
 
 class ApiError(Exception):
-    pass
+    def __init__(self, message, status_code=None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class ApiClient:
@@ -37,9 +39,9 @@ class ApiClient:
                 error.close()
             if not isinstance(detail, str) or not detail:
                 detail = "Check the entered data."
-            raise ApiError(detail) from None
+            raise ApiError(detail, error.code) from None
         except (URLError, TimeoutError, OSError):
-            raise ApiError("Server unavailable. Check the server and try again.") from None
+            raise ApiError("Server unavailable. Start the server in a separate terminal, then try again.") from None
         except (ValueError, TypeError):
             raise ApiError("The server returned an invalid response.") from None
 

@@ -31,6 +31,7 @@ executor = None
 pending = None
 pending_action = None
 pending_run_id = None
+auth_cancelled = False
 score_state = ""
 ball_trail = []
 particles = []
@@ -47,10 +48,12 @@ def clear_effects():
 
 
 def begin_request(action, function, *args):
-    global pending, pending_action, pending_run_id
+    global pending, pending_action, pending_run_id, auth_cancelled
     if pending is not None:
         show_status("Waiting for the server...")
         return False
+    if action in ("login", "register"):
+        auth_cancelled = False
     pending_action = action
     pending_run_id = game.run_id
     pending = executor.submit(function, *args)
@@ -59,25 +62,26 @@ def begin_request(action, function, *args):
 
 
 def poll_request():
-    global pending, pending_action, password_input, game, has_run, score_state
+    global pending, pending_action, password_input, game, has_run, score_state, selected_button
     if pending is None or not pending.done():
         return
     action, run_id = pending_action, pending_run_id
     future = pending
     pending = None
     pending_action = None
+    # Ответ покинутой формы не должен открывать её заново.
+    if action in ("login", "register") and (auth_cancelled or game.state not in ("login", "register")):
+        return
     try:
         result = future.result()
-        if action == "login":
+        if action in ("login", "register"):
             api.token = result["token"]
             api.username = result["username"]
             password_input = ""
             game.state = "menu"
-            show_status("Signed in as " + api.username + ".")
-        elif action == "register":
-            password_input = ""
-            game.state = "login"
-            show_status("Account created. Enter your password to sign in.")
+            selected_button = 0 if has_run else 1
+            pygame.key.stop_text_input()
+            show_status("Signed in as " + api.username + ". Choose New game to play.")
         elif action == "save":
             show_status("Game saved. Continue here or load it from the menu.")
         elif action == "load":
@@ -93,18 +97,31 @@ def poll_request():
     except (ApiError, ValueError, KeyError, TypeError) as error:
         if action == "score" and game.run_id == run_id:
             score_state = "error"
-        show_status(str(error) or "Unable to process the server response.", True)
+        if action == "register" and isinstance(error, ApiError) and error.status_code == 409:
+            game.state = "login"
+            show_status("This username is already registered. Sign in with your password.", True)
+        else:
+            show_status(str(error) or "Unable to process the server response.", True)
 
 
 def require_login():
     if api.token:
         return True
     game.state = "login"
+    pygame.key.start_text_input()
     show_status("Sign in or create an account to play.")
     return False
 
 
+def register_and_login(username, password):
+    # После создания аккаунта сразу получаем обычный токен входа.
+    api.register(username, password)
+    return api.login(username, password)
+
+
 def submit_auth():
+    if pending is not None:
+        return
     username = username_input.strip()
     if not username or not password_input:
         show_status("Enter a username and password.", True)
@@ -116,13 +133,13 @@ def submit_auth():
         if not 8 <= len(password_input) <= 128:
             show_status("Password: 8-128 characters.", True)
             return
-        begin_request("register", api.register, username, password_input)
+        begin_request("register", register_and_login, username, password_input)
     else:
         begin_request("login", api.login, username, password_input)
 
 
 def perform_action(action):
-    global running, selected_button, has_run, score_state, password_input, active_field
+    global running, selected_button, has_run, score_state, password_input, active_field, auth_cancelled
     if action == "exit":
         running = False
         return
@@ -130,18 +147,23 @@ def perform_action(action):
         if game.state == "playing":
             game.toggle_pause()
             return
+        if game.state in ("login", "register"):
+            auth_cancelled = True
         game.state = "menu"
         selected_button = 0 if has_run else 1
         password_input = ""
+        pygame.key.stop_text_input()
         clear_effects()
         return
     if action == "controls":
         game.state = "controls"
         return
     if action in ("login", "register"):
+        if pending is not None:
+            return
+        # Переключение формы сохраняет уже введённые данные и фокус.
         game.state = action
-        password_input = ""
-        active_field = 0
+        pygame.key.start_text_input()
         show_status("Username: 3-20 letters, numbers, _ or -. Password: 8-128 characters.")
         return
     if action == "auth":
@@ -190,30 +212,55 @@ def perform_action(action):
                 score_state = "pending"
 
 
+def viewport():
+    width, height = pygame.display.get_surface().get_size()
+    scale = min(width / WIDTH, height / HEIGHT)
+    area = pygame.Rect(0, 0, max(1, round(WIDTH * scale)), max(1, round(HEIGHT * scale)))
+    area.center = (width // 2, height // 2)
+    return area
+
+
+def game_position(position):
+    # Мышь переводим из размеров окна в координаты игрового поля.
+    area = viewport()
+    return ((position[0] - area.x) * WIDTH / area.width,
+            (position[1] - area.y) * HEIGHT / area.height)
+
+
+def present():
+    window = pygame.display.get_surface()
+    area = viewport()
+    window.fill(ui.BG)
+    image = screen if area.size == screen.get_size() else pygame.transform.smoothscale(screen, area.size)
+    window.blit(image, area)
+    pygame.display.flip()
+
+
 def handle_event(event):
     global running, selected_button, active_field, username_input, password_input
+    position = game_position(event.pos) if hasattr(event, "pos") else None
     if event.type == pygame.QUIT:
         running = False
     elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         if game.state in ("login", "register"):
             for index, rect in enumerate(ui.AUTH_FIELDS):
-                if rect.collidepoint(event.pos):
+                if rect.collidepoint(position):
                     active_field = index
         for action, rect in ui.buttons_for_state(game.state).items():
-            if rect.collidepoint(event.pos):
+            if rect.collidepoint(position):
                 perform_action(action)
                 break
     elif event.type == pygame.MOUSEMOTION and game.state == "menu":
         for index, rect in enumerate(ui.MENU_BUTTONS.values()):
-            if rect.collidepoint(event.pos):
+            if rect.collidepoint(position):
                 selected_button = index
                 break
     elif event.type == pygame.TEXTINPUT and game.state in ("login", "register") and pending is None:
         value = "".join(char for char in event.text if char.isprintable())
         if active_field == 0:
-            username_input = (username_input + value)[:20]
+            username_input = (username_input + value)[:128]
         else:
-            password_input = (password_input + value)[:128]
+            password_input = (password_input + value)[:256]
     elif event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
             perform_action("exit" if game.state == "menu" else "menu")
@@ -284,7 +331,8 @@ def update(dt):
     poll_request()
     if game.state == "menu":
         demo.update(dt)
-    ui.update_animations(game.state, selected_button, dt, demo.reset_timer > 0)
+    ui.update_animations(game.state, selected_button, dt, demo.reset_timer > 0,
+                         game_position(pygame.mouse.get_pos()))
     keys = pygame.key.get_pressed()
     direction = int(keys[pygame.K_RIGHT] or keys[pygame.K_d])
     direction -= int(keys[pygame.K_LEFT] or keys[pygame.K_a])
@@ -323,10 +371,13 @@ def draw():
 
 def initialize():
     global screen, clock, running, selected_button, demo, executor
-    global pending, pending_action, has_run, score_state, status, password_input, username_input, active_field
+    global pending, pending_action, pending_run_id, has_run, score_state, status, status_error
+    global password_input, username_input, active_field, auth_cancelled
     pygame.display.init()
     pygame.font.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    # Физика и интерфейс сохраняют координаты, а окно можно менять.
+    pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
+    screen = pygame.Surface((WIDTH, HEIGHT)).convert()
     pygame.display.set_caption("Brickfall")
     clock = pygame.time.Clock()
     ui.initialize_fonts()
@@ -337,6 +388,10 @@ def initialize():
     active_field = 0
     has_run = False
     score_state = status = username_input = password_input = ""
+    status_error = False
+    pending_run_id = None
+    auth_cancelled = False
+    pygame.key.stop_text_input()
     demo = MenuDemo()
     executor = ThreadPoolExecutor(max_workers=1)
     pending = pending_action = None
@@ -360,7 +415,7 @@ def main():
             if running:
                 update(dt)
                 draw()
-                pygame.display.flip()
+                present()
     finally:
         shutdown()
 

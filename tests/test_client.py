@@ -20,6 +20,18 @@ class ClientTests(unittest.TestCase):
     def tearDown(self):
         client.shutdown()
 
+    def press(self, key):
+        client.handle_event(pygame.event.Event(pygame.KEYDOWN, key=key))
+
+    def click(self, action):
+        rect = client.ui.buttons_for_state(client.game.state)[action]
+        client.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center))
+
+    def type_field(self, index, value):
+        rect = client.ui.AUTH_FIELDS[index]
+        client.handle_event(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=rect.center))
+        client.handle_event(pygame.event.Event(pygame.TEXTINPUT, text=value))
+
     def finish_request(self):
         # Ждём только фоновую тестовую функцию, затем обрабатываем результат в окне.
         client.pending.result(timeout=2)
@@ -28,31 +40,76 @@ class ClientTests(unittest.TestCase):
     def test_login_registration_and_screens(self):
         client.api.register = Mock(return_value={"username": "Student"})
         client.api.login = Mock(return_value={"username": "Student", "token": "test-session"})
-        client.perform_action("start")
+        self.click("start")
         self.assertEqual(client.game.state, "login")
-        client.perform_action("register")
-        client.username_input, client.password_input = "Student", "practice-pass"
-        client.submit_auth()
+        self.type_field(0, "StudentX")
+        self.press(pygame.K_BACKSPACE)
+        self.press(pygame.K_TAB)
+        client.handle_event(pygame.event.Event(pygame.TEXTINPUT, text="practice-pass"))
+        for action in ("register", "login", "register"):
+            self.click(action)
+            self.assertEqual(client.game.state, action)
+            self.assertEqual(client.username_input, "Student")
+            self.assertEqual(client.password_input, "practice-pass")
+            self.assertEqual(client.active_field, 1)
+        self.press(pygame.K_RETURN)
         self.finish_request()
-        self.assertEqual(client.game.state, "login")
-        self.assertEqual(client.password_input, "")
-        client.password_input = "practice-pass"
-        client.submit_auth()
-        self.finish_request()
+        client.api.register.assert_called_once_with("Student", "practice-pass")
+        client.api.login.assert_called_once_with("Student", "practice-pass")
         self.assertEqual(client.game.state, "menu")
-        client.perform_action("start")
-        self.assertEqual(client.game.state, "playing")
+        self.assertEqual(client.password_input, "")
         self.assertEqual(client.api.username, "Student")
+        self.press(pygame.K_RETURN)
+        self.assertEqual(client.game.state, "playing")
+        self.assertEqual(client.game.level, 1)
+        self.press(pygame.K_SPACE)
+        self.assertFalse(client.game.ball_attached)
         for state in ("menu", "login", "register", "controls", "playing", "paused", "win", "game_over"):
             client.game.state = state
             client.draw()
         self.assertEqual(client.screen.get_size(), (900, 600))
 
+    def test_duplicate_registration_and_wrong_password_allow_login(self):
+        client.api.register = Mock(side_effect=ApiError("This username is already registered.", 409))
+        client.api.login = Mock(side_effect=ApiError("Incorrect username or password.", 401))
+        self.click("account")
+        self.click("register")
+        self.type_field(0, "Student")
+        self.type_field(1, "wrong-password")
+        self.click("auth")
+        with self.assertRaises(ApiError):
+            client.pending.result(timeout=2)
+        client.poll_request()
+        self.assertEqual(client.game.state, "login")
+        self.assertIn("Sign in", client.status)
+        self.assertEqual(client.username_input, "Student")
+        self.assertEqual(client.password_input, "wrong-password")
+        self.assertEqual(client.active_field, 1)
+        self.click("auth")
+        with self.assertRaises(ApiError):
+            client.pending.result(timeout=2)
+        client.poll_request()
+        self.assertEqual(client.game.state, "login")
+        self.assertTrue(client.status_error)
+        self.assertIn("Incorrect username or password", client.status)
+        for _ in "wrong-password":
+            self.press(pygame.K_BACKSPACE)
+        client.handle_event(pygame.event.Event(pygame.TEXTINPUT, text="practice-pass"))
+        client.api.login.side_effect = None
+        client.api.login.return_value = {"username": "Student", "token": "test-session"}
+        self.click("auth")
+        self.finish_request()
+        self.assertEqual(client.game.state, "menu")
+        client.api.login.assert_called_with("Student", "practice-pass")
+        self.click("start")
+        self.assertEqual(client.game.state, "playing")
+        self.assertEqual(client.game.level, 1)
+
     def test_pause_menu_continue_save_load(self):
         client.api.token = "test-session"
         client.api.save = Mock(return_value={})
         client.perform_action("start")
-        client.handle_event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_SPACE))
+        self.press(pygame.K_SPACE)
         self.assertFalse(client.game.ball_attached)
         client.perform_action("menu")
         self.assertEqual(client.game.state, "paused")
@@ -63,6 +120,7 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(client.game.state, "menu")
         client.perform_action("continue")
         self.assertEqual(client.game.state, "playing")
+        self.assertEqual(client.game.run_id, saved["run_id"])
         client.api.load = Mock(return_value=saved)
         client.perform_action("pause")
         client.perform_action("load")
@@ -90,21 +148,46 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(client.score_state, "saved")
         self.assertEqual(client.api.send_score.call_count, 2)
 
-    def test_pending_network_does_not_block_frame_or_menu(self):
-        client.pending = Future()
+    def test_pending_network_does_not_block_or_restore_cancelled_login(self):
+        self.click("account")
+        future = Future()
+        client.pending = future
         client.pending_action = "login"
-        client.game.state = "login"
         started = time.monotonic()
         client.update(1 / 60)
         client.draw()
-        client.perform_action("menu")
+        self.press(pygame.K_ESCAPE)
         self.assertLess(time.monotonic() - started, 1)
         self.assertEqual(client.game.state, "menu")
-        self.assertFalse(client.pending.done())
+        self.assertFalse(future.done())
+        # Даже повторное открытие формы не принимает ответ отменённого входа.
+        self.assertFalse(client.require_login())
+        future.set_result({"username": "Student", "token": "cancelled-session"})
+        client.poll_request()
+        self.assertEqual(client.game.state, "login")
+        self.assertIsNone(client.api.token)
+        self.assertIsNone(client.pending)
+
+    def test_resized_window_keeps_buttons_clickable(self):
+        client.api.token = "test-session"
+        client.perform_action("start")
+        # Те же видимые кнопки должны работать и в небольшом окне, и с полями по бокам.
+        for size, point in (((720, 480), (642, 40)),
+                            ((1200, 800), (1069, 67)),
+                            ((1280, 720), (1062, 60))):
+            with self.subTest(size=size):
+                pygame.display.set_mode(size, pygame.RESIZABLE)
+                client.handle_event(pygame.event.Event(
+                    pygame.MOUSEBUTTONDOWN, button=1, pos=point))
+                self.assertEqual(client.game.state, "paused")
+                self.assertEqual(client.screen.get_size(), (900, 600))
+                client.draw()
+                client.present()
+                client.perform_action("resume")
 
     def test_unavailable_server_has_clear_error(self):
         api = ApiClient("http://127.0.0.1:1", timeout=0.2)
-        with self.assertRaisesRegex(ApiError, "Server unavailable"):
+        with self.assertRaisesRegex(ApiError, "Server unavailable.*separate terminal"):
             api.login("Student", "practice-pass")
 
 
