@@ -1,30 +1,44 @@
 import random
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pygame
 
-# При запуске файла напрямую Python должен видеть соседнюю папку game/.
+# Прямой запуск файла тоже должен находить соседние папки.
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from client import ui
-from game.logic import Game, WIDTH, HEIGHT, BALL_RADIUS, BOSS_MAX_HEALTH
+from client.api_client import ApiClient, ApiError
+from game.logic import Game, WIDTH, HEIGHT, BALL_RADIUS
 from game.demo import MenuDemo
 
-# Клиент хранит только окно, выбор пункта меню и визуальные эффекты.
 game = Game()
 demo = MenuDemo()
-MENU_ACTIONS = ("start", "controls", "boss_test", "exit")
+api = ApiClient()
 screen = None
 clock = None
 running = True
 selected_button = 0
+has_run = False
+status = ""
+status_error = False
+username_input = ""
+password_input = ""
+active_field = 0
+executor = None
+pending = None
+pending_action = None
+pending_run_id = None
+score_state = ""
 ball_trail = []
 particles = []
-transition_surface = None
-transition_timer = 0.0
-last_drawn_state = None
+
+
+def show_status(message, error=False):
+    global status, status_error
+    status, status_error = message, error
 
 
 def clear_effects():
@@ -32,29 +46,159 @@ def clear_effects():
     particles.clear()
 
 
+def begin_request(action, function, *args):
+    global pending, pending_action, pending_run_id
+    if pending is not None:
+        show_status("Waiting for the server...")
+        return False
+    pending_action = action
+    pending_run_id = game.run_id
+    pending = executor.submit(function, *args)
+    show_status("Connecting..." if action in ("login", "register") else "Waiting for the server...")
+    return True
+
+
+def poll_request():
+    global pending, pending_action, password_input, game, has_run, score_state
+    if pending is None or not pending.done():
+        return
+    action, run_id = pending_action, pending_run_id
+    future = pending
+    pending = None
+    pending_action = None
+    try:
+        result = future.result()
+        if action == "login":
+            api.token = result["token"]
+            api.username = result["username"]
+            password_input = ""
+            game.state = "menu"
+            show_status("Signed in as " + api.username + ".")
+        elif action == "register":
+            password_input = ""
+            game.state = "login"
+            show_status("Account created. Enter your password to sign in.")
+        elif action == "save":
+            show_status("Game saved. Continue here or load it from the menu.")
+        elif action == "load":
+            game = Game.from_dict(result)
+            has_run = True
+            score_state = ""
+            clear_effects()
+            show_status("Game loaded and paused. Press P to continue.")
+        elif action == "score":
+            if game.run_id == run_id:
+                score_state = "saved"
+            show_status("Result saved to the leaderboard.")
+    except (ApiError, ValueError, KeyError, TypeError) as error:
+        if action == "score" and game.run_id == run_id:
+            score_state = "error"
+        show_status(str(error) or "Unable to process the server response.", True)
+
+
+def require_login():
+    if api.token:
+        return True
+    game.state = "login"
+    show_status("Sign in or create an account to play.")
+    return False
+
+
+def submit_auth():
+    username = username_input.strip()
+    if not username or not password_input:
+        show_status("Enter a username and password.", True)
+        return
+    if game.state == "register":
+        if not (3 <= len(username) <= 20) or not all(c.isascii() and (c.isalnum() or c in "_-") for c in username):
+            show_status("Username: 3-20 letters, numbers, _ or -.", True)
+            return
+        if not 8 <= len(password_input) <= 128:
+            show_status("Password: 8-128 characters.", True)
+            return
+        begin_request("register", api.register, username, password_input)
+    else:
+        begin_request("login", api.login, username, password_input)
+
+
 def perform_action(action):
-    global running, selected_button
-    if action in ("start", "boss_test", "retry"):
-        boss_test = game.boss_test if action == "retry" else action == "boss_test"
-        game.start(boss_test=boss_test)
-        clear_effects()
-    elif action == "controls":
-        game.state = "controls"
-    elif action == "exit":
+    global running, selected_button, has_run, score_state, password_input, active_field
+    if action == "exit":
         running = False
-    elif action in ("resume", "pause"):
-        game.toggle_pause()
-    elif action == "menu":
+        return
+    if action == "menu":
+        if game.state == "playing":
+            game.toggle_pause()
+            return
         game.state = "menu"
-        selected_button = 0
+        selected_button = 0 if has_run else 1
+        password_input = ""
         clear_effects()
+        return
+    if action == "controls":
+        game.state = "controls"
+        return
+    if action in ("login", "register"):
+        game.state = action
+        password_input = ""
+        active_field = 0
+        show_status("Username: 3-20 letters, numbers, _ or -. Password: 8-128 characters.")
+        return
+    if action == "auth":
+        submit_auth()
+        return
+    if action == "account":
+        if pending is not None:
+            return
+        if api.token:
+            api.token = api.username = None
+            has_run = False
+            game.state = "menu"
+            show_status("Signed out.")
+        else:
+            perform_action("login")
+        return
+    if action in ("start", "retry", "load", "save", "resume", "continue") and pending is not None:
+        show_status("Waiting for the server...")
+        return
+    if action in ("start", "retry"):
+        if require_login():
+            game.start()
+            has_run = True
+            score_state = ""
+            clear_effects()
+            show_status("")
+    elif action in ("resume", "continue"):
+        if has_run and game.state not in ("win", "game_over") and require_login():
+            game.state = "playing"
+            show_status("")
+        elif not has_run:
+            show_status("Start a new game or load a saved game.")
+    elif action == "pause":
+        game.toggle_pause()
+    elif action == "save":
+        if has_run and game.state in ("playing", "paused") and require_login():
+            if game.state == "playing":
+                game.toggle_pause()
+            begin_request("save", api.save, game.to_dict())
+    elif action == "load":
+        if require_login():
+            begin_request("load", api.load)
+    elif action == "send_score":
+        if score_state == "error" and api.token:
+            if begin_request("score", api.send_score, game.score, game.run_id):
+                score_state = "pending"
 
 
 def handle_event(event):
-    global running, selected_button
+    global running, selected_button, active_field, username_input, password_input
     if event.type == pygame.QUIT:
         running = False
     elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        if game.state in ("login", "register"):
+            for index, rect in enumerate(ui.AUTH_FIELDS):
+                if rect.collidepoint(event.pos):
+                    active_field = index
         for action, rect in ui.buttons_for_state(game.state).items():
             if rect.collidepoint(event.pos):
                 perform_action(action)
@@ -64,67 +208,80 @@ def handle_event(event):
             if rect.collidepoint(event.pos):
                 selected_button = index
                 break
+    elif event.type == pygame.TEXTINPUT and game.state in ("login", "register") and pending is None:
+        value = "".join(char for char in event.text if char.isprintable())
+        if active_field == 0:
+            username_input = (username_input + value)[:20]
+        else:
+            password_input = (password_input + value)[:128]
     elif event.type == pygame.KEYDOWN:
         if event.key == pygame.K_ESCAPE:
             perform_action("exit" if game.state == "menu" else "menu")
+        elif game.state in ("login", "register"):
+            if event.key == pygame.K_TAB:
+                active_field = 1 - active_field
+            elif event.key == pygame.K_BACKSPACE and pending is None:
+                if active_field == 0:
+                    username_input = username_input[:-1]
+                else:
+                    password_input = password_input[:-1]
+            elif event.key == pygame.K_RETURN:
+                submit_auth()
         elif game.state == "menu":
             if event.key in (pygame.K_UP, pygame.K_DOWN):
                 change = -1 if event.key == pygame.K_UP else 1
-                selected_button = (selected_button + change) % len(MENU_ACTIONS)
+                selected_button = (selected_button + change) % len(ui.MENU_BUTTONS)
             elif event.key == pygame.K_RETURN:
-                perform_action(MENU_ACTIONS[selected_button])
-            elif event.key == pygame.K_b:
-                perform_action("boss_test")
+                perform_action(tuple(ui.MENU_BUTTONS)[selected_button])
+            elif event.key == pygame.K_F9:
+                perform_action("load")
         elif game.state == "controls":
             if event.key == pygame.K_RETURN:
                 perform_action("menu")
-        elif event.key == pygame.K_RETURN and game.state in ("game_over", "win"):
-            perform_action("retry")
+        elif game.state in ("game_over", "win"):
+            if event.key == pygame.K_RETURN:
+                perform_action("retry")
         elif event.key == pygame.K_p:
-            game.toggle_pause()
+            if game.state == "paused":
+                perform_action("resume")
+            elif game.state == "playing":
+                perform_action("pause")
+        elif event.key == pygame.K_F5:
+            perform_action("save")
+        elif event.key == pygame.K_F9 and game.state == "paused":
+            perform_action("load")
         elif event.key == pygame.K_SPACE:
             game.launch_ball()
         elif event.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
             game.activate_slow()
 
 
-def add_particles(x, y, color_index):
-    # Частицы относятся только к отображению и не влияют на столкновения.
-    color = ui.BRICK_COLORS[color_index % len(ui.BRICK_COLORS)]
-    for _ in range(8):
-        particles.append({
-            "x": float(x), "y": float(y),
-            "vx": random.uniform(-100, 100),
-            "vy": random.uniform(-110, 70),
-            "life": 0.35, "color": color,
-        })
-
-
 def update_effects(dt):
-    # Пауза останавливает и физику, и визуальные анимации.
-    if game.state not in ("playing", "boss_defeated"):
+    if game.state != "playing":
         return
     for particle in particles[:]:
         particle["life"] -= dt
         particle["x"] += particle["vx"] * dt
         particle["y"] += particle["vy"] * dt
-        particle["vy"] += 200 * dt
         if particle["life"] <= 0:
             particles.remove(particle)
     for x, y, color_index in game.hit_events:
-        add_particles(x, y, color_index)
+        for _ in range(4):
+            particles.append({
+                "x": x, "y": y, "vx": random.uniform(-65, 65),
+                "vy": random.uniform(-65, 65), "life": 0.25,
+                "color": ui.BRICK_COLORS[color_index % len(ui.BRICK_COLORS)],
+            })
     if game.ball_attached:
         ball_trail.clear()
     else:
         ball_trail.append((game.ball_x, game.ball_y))
-        if len(ball_trail) > 8:
-            ball_trail.pop(0)
+        del ball_trail[:-5]
 
 
 def update(dt):
-    global transition_timer
-    dt = max(0.0, min(dt, 1 / 30))
-    transition_timer = max(0.0, transition_timer - dt)
+    global has_run, score_state
+    poll_request()
     if game.state == "menu":
         demo.update(dt)
     ui.update_animations(game.state, selected_button, dt, demo.reset_timer > 0)
@@ -132,53 +289,41 @@ def update(dt):
     direction = int(keys[pygame.K_RIGHT] or keys[pygame.K_d])
     direction -= int(keys[pygame.K_LEFT] or keys[pygame.K_a])
     game.update(dt, direction)
-    update_effects(max(0.0, min(dt, 1 / 30)))
-
-
-def draw_scene():
-    if game.state == "menu":
-        ui.draw_menu(screen, selected_button, demo)
-        return
-    if game.state == "controls":
-        ui.draw_controls(screen)
-        return
-    ui.draw_game_background(screen)
-    ui.draw_top_bar(screen, game)
-    if game.level == 4:
-        ui.draw_boss_health(screen, game, BOSS_MAX_HEALTH)
-        ui.draw_boss(screen, game)
-        ui.draw_boss_attacks(screen, game)
-    for brick in game.bricks:
-        ui.draw_brick(screen, ui.pygame_rect(brick),
-                      ui.BRICK_COLORS[brick.color_index % len(ui.BRICK_COLORS)])
-    ui.draw_particles(screen, particles)
-    ui.draw_paddle(screen, ui.pygame_rect(game.paddle), game.shrink_timer > 0)
-    ui.draw_ball(screen, game.ball_x, game.ball_y, BALL_RADIUS,
-                 ball_trail, game.slow_timer > 0)
-    ui.draw_footer(screen, game)
-    if game.ball_attached:
-        ui.draw_ready_hint(screen, game.level)
-    if game.state in ("paused", "game_over", "win"):
-        ui.draw_modal(screen, game.state, game.score, game.boss_test)
+    update_effects(dt)
+    if game.state in ("game_over", "win"):
+        has_run = False
+        # Один автоматический запрос на попытку. Повтор после ошибки только по кнопке.
+        if not score_state and api.token and pending is None:
+            if begin_request("score", api.send_score, game.score, game.run_id):
+                score_state = "pending"
 
 
 def draw():
-    global last_drawn_state, transition_surface, transition_timer
-    # При смене экрана предыдущий кадр мягко исчезает за 0,18 секунды.
-    if last_drawn_state is not None and last_drawn_state != game.state:
-        transition_surface = screen.copy()
-        transition_timer = 0.18
-    draw_scene()
-    if transition_timer > 0 and transition_surface is not None:
-        transition_surface.set_alpha(round(255 * transition_timer / 0.18))
-        screen.blit(transition_surface, (0, 0))
-    last_drawn_state = game.state
+    if game.state == "menu":
+        ui.draw_menu(screen, selected_button, demo, api.username, has_run)
+    elif game.state == "controls":
+        ui.draw_controls(screen)
+    elif game.state in ("login", "register"):
+        ui.draw_auth(screen, game.state, username_input, password_input, active_field, pending is not None)
+    else:
+        ui.draw_game_background(screen)
+        ui.draw_top_bar(screen, game)
+        for brick in game.bricks:
+            ui.draw_brick(screen, ui.pygame_rect(brick), ui.BRICK_COLORS[brick.color_index % len(ui.BRICK_COLORS)])
+        ui.draw_particles(screen, particles)
+        ui.draw_paddle(screen, ui.pygame_rect(game.paddle), game.shrink_timer > 0)
+        ui.draw_ball(screen, game.ball_x, game.ball_y, BALL_RADIUS, ball_trail, game.slow_timer > 0)
+        ui.draw_footer(screen, game)
+        if game.ball_attached:
+            ui.draw_ready_hint(screen, game.level)
+        if game.state in ("paused", "game_over", "win"):
+            ui.draw_modal(screen, game.state, game.score, score_state)
+    ui.draw_status(screen, status, status_error)
 
 
 def initialize():
-    global screen, clock, running, selected_button, demo
-    global transition_surface, transition_timer, last_drawn_state
-    # Звука в игре нет, поэтому аудиоустройство инициализировать не нужно.
+    global screen, clock, running, selected_button, demo, executor
+    global pending, pending_action, has_run, score_state, status, password_input, username_input, active_field
     pygame.display.init()
     pygame.font.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -188,32 +333,37 @@ def initialize():
     game.start()
     game.state = "menu"
     running = True
-    selected_button = 0
+    selected_button = 1
+    active_field = 0
+    has_run = False
+    score_state = status = username_input = password_input = ""
     demo = MenuDemo()
-    transition_surface = None
-    transition_timer = 0.0
-    last_drawn_state = None
+    executor = ThreadPoolExecutor(max_workers=1)
+    pending = pending_action = None
     ui.button_progress.clear()
-    ui.demo_visibility = 1.0
     clear_effects()
+
+
+def shutdown():
+    if executor is not None:
+        executor.shutdown(wait=False, cancel_futures=True)
+    pygame.quit()
 
 
 def main():
     initialize()
     try:
         while running:
-            dt = clock.tick(60) / 1000.0
+            dt = min(clock.tick(60) / 1000.0, 1 / 30)
             for event in pygame.event.get():
                 handle_event(event)
-            if not running:
-                break
-            update(dt)
-            draw()
-            pygame.display.flip()
+            if running:
+                update(dt)
+                draw()
+                pygame.display.flip()
     finally:
-        pygame.quit()
+        shutdown()
 
 
-# При импорте игровой цикл не запускается.
 if __name__ == "__main__":
     main()
