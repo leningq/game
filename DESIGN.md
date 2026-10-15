@@ -1,38 +1,80 @@
 # Brickfall — spēles dizains
 
-**1. Nosaukums un žanrs**
+## Nosaukums un žanrs
 
-Brickfall — Breakout tipa arkādes spēle.
+Brickfall ir vienkārša 2D Breakout arkādes spēle Python un Pygame vidē.
+Pamats ir sākotnējais skolas darba dokuments `Dizains.docx`.
 
-**2. Mērķis**
+## Mērķis
 
-Spēlētāja mērķis ir iznīcināt visus ķieģeļus ar bumbiņu. Spēlētājam ir 3 dzīvības. Ja visas dzīvības ir zaudētas, spēle beidzas. Pēc trešā līmeņa pabeigšanas spēlētājs uzvar.
+Iznīcināt visus ķieģeļus un pabeigt trīs līmeņus. Spēlētājam ir trīs dzīvības.
+Kad bumbiņa nokrīt zem platformas, pazūd viena dzīvība.
+Pēc trešā līmeņa ir uzvara; pēc visu dzīvību zaudēšanas spēle beidzas.
+Priekšnieka, robota un papildu debufu nav.
 
-**3. Vadība**
+## Vadība
 
+| Taustiņš | Darbība |
+| --- | --- |
+| ← / → vai A / D | Platformas kustība |
+| Space | Bumbiņas palaišana |
+| Shift | Bumbiņas palēnināšana |
+| P | Pauze / turpināt |
+| Esc | Pauze; pauzes ekrānā — galvenā izvēlne |
+| F5 | Apturēt un saglabāt spēli |
+| F9 | Ielādēt saglabājumu izvēlnē vai pauzē |
 
- Kreisā bultiņa — platforma kustas pa kreisi.
- Labā bultiņa — platforma kustas pa labi.
- P — pauze un spēles turpināšana.
- SPACE — bumbiņas palēnināšana.
+Sākotnējā dokumentā Space bija palēnināšanas taustiņš.
+Atbilstoši jaunajai prasībai Space palaiž bumbiņu, bet Shift palēnina to.
 
-**4. Pamata cikls**
+## Spēles cikls un līmeņi
 
-Spēlētājs kustina platformu, atsit bumbiņu un iznīcina ķieģeļus. Par katru iznīcināto ķieģeli tiek piešķirti punkti.
+Spēlētājs piesakās → izvēlas jaunu spēli → palaiž bumbiņu →
+atsit to ar platformu → iznīcina ķieģeļus → saņem punktus.
+Par katru ķieģeli ir 10 punktu.
+Katram no trim līmeņiem ir savs ķieģeļu izkārtojums.
+Nākamajos līmeņos bumbiņas ātrums pieaug.
+Līmeņa sākumā un pēc dzīvības zaudēšanas bumbiņa gaida uz platformas.
+Atsitiena leņķis atkarīgs no trāpījuma vietas uz platformas.
 
-**5. Divas unikālās mehānikas**
+## Divas īpašās mehānikas
 
- Pēc katriem 5 iznīcinātiem ķieģeļiem platforma uz 3 sekundēm kļūst šaurāka.
- Vienu reizi katrā līmenī spēlētājs var palēnināt bumbiņu uz 3 sekundēm.
+1. Pēc katriem pieciem iznīcinātiem ķieģeļiem platforma kļūst šaurāka
+   uz trim sekundēm, pēc tam atgūst parasto platumu.
+2. Vienu reizi katrā līmenī ar Shift var palēnināt kustībā esošu bumbiņu
+   uz trim sekundēm. Dzīvības zaudēšana šo iespēju neatjauno.
 
-**6. Līmeņi**
+Pauzē spēles kustība un efektu taimeri apstājas.
 
-Spēlei ir 3 līmeņi. Katrā nākamajā līmenī bumbiņa kustas ātrāk un spēle kļūst grūtāka.
+## Ekrāni un izskats
 
-**7. Punkti**
+Pieteikšanās un reģistrācija, galvenā izvēlne, spēle, pauze,
+vadības paskaidrojums, uzvara un zaudējums.
+Spēlei ir tumšs fons, mierīgas ķieģeļu krāsas, labi redzama platforma
+un bumbiņa. Ekrānā redzami punkti, dzīvības, līmenis un mehāniku stāvoklis.
+Attēli un nelieli efekti tiek zīmēti ar Pygame.
 
-Par katru iznīcināto ķieģeli spēlētājs saņem 10 punktus.
+## Saglabāšana un mājaslapa
 
-**8. Saglabāšana**
+FastAPI serveris lieto SQLite. Spēlētājs reģistrējas un piesakās ar vārdu
+un paroli. Serverī ir tikai paroles hešs un nejauša sāls.
+Pēc pieteikšanās klients saņem autorizācijas tokenu.
 
-Spēlētājs piesakās ar lietotājvārdu un paroli. Pēc spēles rezultāts tiek nosūtīts serverim un saglabāts datubāzē. Labākie rezultāti ir redzami mājaslapā.
+Saglabājumā ir līmenis, punkti, dzīvības, ķieģeļi, bumbiņas un platformas
+pozīcijas, ātrums, efektu taimeri un spēles identifikators.
+Vienam spēlētājam ir viens pēdējais saglabājums.
+
+Pabeigtas spēles rezultāts nonāk tajā pašā datubāzē.
+Mājaslapā ir top-10 pēc katra spēlētāja labākā rezultāta, profils ar
+statistiku un noteikumi. Mājaslapai ir balts fons, tumša galvene,
+vienkārša tabula un pielāgojums nelieliem ekrāniem.
+Izdomātu rezultātu nav.
+
+## Projekta sadalījums
+
+`game/` veic aprēķinus bez Pygame.
+`client/` atbild par logu, zīmēšanu, vadību un API pieprasījumiem.
+`api/` apstrādā HTTP pieprasījumus un SQLite.
+`templates/` un `static/` veido vienkāršo mājaslapu.
+
+Sākotnējā ekrāna skice ir `docs/skice.png`.

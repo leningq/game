@@ -1,0 +1,12 @@
+services:
+  server:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      BRICKFALL_DB_PATH: /app/data/brickfall.sqlite3
+    volumes:
+      - brickfall-data:/app/data
+
+volumes:
+  brickfall-data:
