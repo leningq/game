@@ -1,145 +1,85 @@
-
-/* основные настройки */
-* {
-    box-sizing: border-box;
+/* Простая светлая страница без внешних шрифтов и JavaScript. */
+:root {
+    color-scheme: light;
+    --ink: #202326;
+    --muted: #6b7177;
+    --line: #e4e7e9;
+    --header: #202426;
 }
-
-body {
-    margin: 0;
-    background-color: #ffffff;
-    color: #202124;
-    font-family: Arial, sans-serif;
-}
-
-/* верхняя панель */
-header {
-    background-color: #262626;
-    padding: 0 30px;
-}
-
-/* содержимое шапки */
-.header-content {
-    max-width: 1100px;
-    height: 85px;
-    margin: auto;
-
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* название игры */
-header h2 {
-    color: white;
-    font-size: 28px;
-    margin: 0;
-}
-
-/* ссылки в шапке */
-nav {
-    display: flex;
-    gap: 35px;
-}
-
-nav a {
-    color: #dddddd;
-    font-size: 17px;
-    text-decoration: none;
-}
-
-/* цвет ссылки при наведении */
-nav a:hover {
-    color: white;
-    text-decoration: underline;
-}
-
-/* основное содержимое */
-main {
-    max-width: 1000px;
-    margin: 90px auto;
-    padding: 0 20px;
-}
-
-/* заголовок страницы */
-h1 {
-    text-align: center;
-    font-size: 46px;
-    margin-bottom: 50px;
-}
-
-/* таблица лидеров */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid #dddddd;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-/* названия столбцов */
-th {
-    background-color: #f1f2f4;
-    color: #555555;
-    text-align: left;
-    font-size: 17px;
-    font-weight: normal;
-    padding: 22px 30px;
-}
-
-/* строки игроков */
-td {
-    padding: 22px 30px;
-    font-size: 17px;
-    border-top: 1px solid #dddddd;
-}
-
-/* ширина столбца с местом */
-th:first-child,
-td:first-child {
-    width: 15%;
-    text-align: center;
-}
-
-/* ширина столбца с очками */
-th:last-child,
-td:last-child {
-    width: 25%;
-    text-align: center;
-}
-
-/* подсветка при наведении */
-tbody tr:hover {
-    background-color: #f7f7f7;
-}
-
-/* оформление для маленьких экранов */
+* { box-sizing: border-box; }
+body { margin: 0; background: #fff; color: var(--ink); font-family: "Segoe UI", Arial, sans-serif; font-size: 16px; line-height: 1.6; }
+a { color: inherit; }
+a:focus-visible { outline: 2px solid #57777a; outline-offset: 5px; }
+.site-header { background: var(--header); color: #fff; }
+.header-content { max-width: 1000px; min-height: 80px; padding: 0 28px; margin: auto; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.brand { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; font-size: 23px; font-weight: 650; letter-spacing: -.7px; }
+.brand-mark { width: 19px; height: 14px; border: 2px solid #bdcecc; border-radius: 2px; border-top-width: 6px; }
+nav { display: flex; align-self: stretch; gap: 28px; }
+nav a { display: flex; align-items: center; border-bottom: 2px solid transparent; color: #bcc2c5; font-size: 14px; text-decoration: none; }
+nav a:hover { color: #fff; }
+nav a[aria-current="page"] { color: #fff; border-bottom-color: #bdcecc; }
+main { max-width: 1000px; min-height: calc(100vh - 203px); margin: 0 auto; padding: 58px 28px 70px; }
+.page-heading { margin-bottom: 32px; }
+.eyebrow { margin: 0 0 10px; color: var(--muted); font-size: 11px; font-weight: 650; letter-spacing: 1.8px; }
+h1 { margin: 0; font-size: clamp(32px, 5vw, 42px); line-height: 1.2; letter-spacing: -1.5px; font-weight: 650; }
+.description { margin: 14px 0 0; color: var(--muted); }
+.table-wrap { border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+th { padding: 14px 24px; background: #f7f8f8; color: var(--muted); font-size: 12px; font-weight: 600; text-align: left; }
+td { padding: 18px 24px; border-top: 1px solid var(--line); font-size: 15px; }
+th:first-child, td:first-child { width: 100px; }
+th:last-child, td:last-child { width: 150px; text-align: right; }
+.rank { color: var(--muted); font-variant-numeric: tabular-nums; }
+.score { font-weight: 600; font-variant-numeric: tabular-nums; }
+.player-link { text-decoration: none; overflow-wrap: anywhere; }
+.player-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+tbody tr:hover { background: #fafbfb; }
+.leaderboard .empty-state { padding: 42px 18px; text-align: center; color: var(--muted); font-size: 14px; }
+.table-note { color: var(--muted); font-size: 12px; margin-top: 16px; }
+.site-footer { max-width: 944px; margin: 0 auto; padding: 22px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.site-footer span { margin: 0 10px; color: #b0b5b8; }
+.back-link { display: inline-block; margin-bottom: 30px; color: var(--muted); font-size: 13px; text-decoration: none; }
+.back-link:hover { color: var(--ink); }
+.player-name { overflow-wrap: anywhere; }
+.player-stats { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); padding: 25px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.player-stats div + div { border-left: 1px solid var(--line); padding-left: 28px; }
+.player-stats dt { color: var(--muted); font-size: 13px; }
+.player-stats dd { margin: 8px 0 0; font-size: 32px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rules-content { max-width: 720px; }
+.rules-content section { margin-top: 32px; padding-top: 26px; border-top: 1px solid var(--line); }
+h2 { margin: 0 0 14px; font-size: 19px; font-weight: 600; letter-spacing: -.3px; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+.rules-content p { color: #52595f; margin: 10px 0; font-size: 14px; }
+.controls { margin: 0; }
+.controls > div { display: grid; grid-template-columns: 200px 1fr; gap: 16px; padding: 10px 0; }
+.controls dt, .controls dd { margin: 0; font-size: 14px; }
+.controls dd { color: #52595f; }
+kbd { display: inline-block; min-width: 25px; padding: 1px 6px; border: 1px solid #d9dde0; border-bottom-width: 2px; border-radius: 4px; background: #fafafa; color: #464d52; text-align: center; font-family: inherit; font-size: 12px; }
+.mechanic { display: flex; gap: 18px; margin-top: 20px; }
+.mechanic-number { padding-top: 2px; color: #8b9599; font-size: 12px; font-variant-numeric: tabular-nums; }
+.mechanic p { margin: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.skip-link { position: absolute; top: -60px; left: 20px; padding: 8px 14px; background: #fff; color: #202326; z-index: 1; }
+.skip-link:focus { top: 12px; }
 @media (max-width: 600px) {
-    .header-content {
-        height: 70px;
-    }
-
-    header h2 {
-        font-size: 22px;
-    }
-
-    nav {
-        gap: 15px;
-    }
-
-    nav a {
-        font-size: 14px;
-    }
-
-    main {
-        margin: 50px auto;
-    }
-
-    h1 {
-        font-size: 34px;
-    }
-
-    th, td {
-        padding: 16px 12px;
-        font-size: 14px;
-    }
+    .header-content { min-height: 72px; padding: 0 20px; gap: 14px; }
+    .brand { font-size: 20px; gap: 7px; }
+    .brand-mark { width: 15px; height: 12px; }
+    nav { gap: 17px; }
+    nav a { font-size: 12px; }
+    main { padding: 40px 20px 52px; }
+    .page-heading { margin-bottom: 25px; }
+    .description { font-size: 14px; }
+    th, td { padding: 15px 14px; }
+    th:first-child, td:first-child { width: 65px; }
+    th:last-child, td:last-child { width: 90px; }
+    .site-footer { margin: 0 20px; padding: 18px 0; font-size: 11px; }
+    .player-stats div + div { padding-left: 15px; }
+    .player-stats dt { font-size: 11px; }
+    .player-stats dd { font-size: 26px; }
+    .controls > div { grid-template-columns: 145px 1fr; gap: 10px; }
+    .controls dd { font-size: 13px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    tbody tr, nav a { transition: background-color .15s, color .15s; }
 }

@@ -1,30 +1,29 @@
-
 {% extends "base.html" %}
-
+{% block title %}Leaderboard · Brickfall{% endblock %}
 {% block content %}
-
-<!-- название страницы -->
-<h1>Leaderboard</h1>
-
-<!-- таблица игроков -->
-<table>
-    <thead>
-        <tr>
-            <th>Rank</th>
-            <th>Player</th>
-            <th>Score</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        {% for player in players %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ player.name }}</td>
-            <td>{{ player.score }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+<div class="page-heading">
+    <p class="eyebrow">THE BEST RUNS</p>
+    <h1>Leaderboard</h1>
+    <p class="description">The top 10 players, ranked by their best score.</p>
+</div>
+<div class="table-wrap">
+    <table class="leaderboard">
+        <caption class="visually-hidden">Best result for each player</caption>
+        <thead>
+            <tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Score</th></tr>
+        </thead>
+        <tbody>
+            {% for player in players %}
+            <tr>
+                <td class="rank">{{ "%02d"|format(loop.index) }}</td>
+                <td><a class="player-link" href="{{ request.url_for('player_profile', name=player.name) }}">{{ player.name }}</a></td>
+                <td class="score">{{ player.score }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="empty-state">No results yet. Finish a game to appear here.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="table-note">One player, one place. Results are saved from the Brickfall game.</p>
 {% endblock %}

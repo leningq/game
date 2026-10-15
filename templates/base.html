@@ -1,31 +1,25 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brickfall</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>{% block title %}Brickfall{% endblock %}</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='style.css') }}">
 </head>
 <body>
-
-    <!-- шапка сайта -->
-    <header>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
         <div class="header-content">
-            <h2>Brickfall</h2>
-
-            <nav>
-                <a href="/">Leaderboard</a>
-                <a href="/rules">Game Rules</a>
+            <a class="brand" href="/" aria-label="Brickfall home"><span class="brand-mark" aria-hidden="true"></span>Brickfall</a>
+            <nav aria-label="Main navigation">
+                <a href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}>Leaderboard</a>
+                <a href="/rules" {% if request.url.path == '/rules' %}aria-current="page"{% endif %}>Game Rules</a>
             </nav>
         </div>
     </header>
-
-    <!-- сюда добавляется содержимое страницы -->
-    <main>
-        {% block content %}
-        {% endblock %}
+    <main id="main">
+        {% block content %}{% endblock %}
     </main>
-
+    <footer class="site-footer">Brickfall <span aria-hidden="true">/</span> Three levels. Every brick counts.</footer>
 </body>
 </html>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ player.name }} · Brickfall{% endblock %}
+{% block content %}
+<a class="back-link" href="/">← Leaderboard</a>
+<div class="page-heading">
+    <p class="eyebrow">PLAYER PROFILE</p>
+    <h1 class="player-name">{{ player.name }}</h1>
+    <p class="description">Results from completed games.</p>
+</div>
+<dl class="player-stats">
+    <div><dt>Games played</dt><dd>{{ player.games }}</dd></div>
+    <div><dt>Best score</dt><dd>{{ player.best_score }}</dd></div>
+    <div><dt>Average score</dt><dd>{{ "%.1f"|format(player.average_score) }}</dd></div>
+</dl>
+{% if player.games == 0 %}
+<p class="table-note">This player has not completed a game yet.</p>
+{% endif %}
+{% endblock %}
