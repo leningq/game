@@ -12,7 +12,7 @@
         <div class="header-content">
             <a class="brand" href="/" aria-label="Brickfall home">BRICKFALL</a>
             <nav aria-label="Main navigation">
-                <a href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}>Leaderboard</a>
+                <a href="/" {% if request.url.path == '/' %}aria-current="page"{% elif request.url.path.startswith('/players/') %}class="section-current"{% endif %}>Leaderboard</a>
                 <a href="/rules" {% if request.url.path == '/rules' %}aria-current="page"{% endif %}>Rules</a>
             </nav>
         </div>
