@@ -1,28 +1,58 @@
 {% extends "base.html" %}
 {% block title %}Leaderboard · Brickfall{% endblock %}
 {% block content %}
-<div class="page-heading">
-    <h1>Leaderboard</h1>
-    <p class="description">Top players ranked by their best score.</p>
-</div>
-<div class="table-wrap">
-    <table class="leaderboard">
-        <caption class="visually-hidden">Best score for each player</caption>
-        <thead>
-            <tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best Score</th></tr>
-        </thead>
-        <tbody>
-            {% for player in players %}
-            <tr{% if loop.index <= 3 %} class="top-place place-{{ loop.index }}"{% endif %}>
-                <td class="rank">{{ "%02d"|format(loop.index) }}</td>
-                <td><a class="player-link" href="{{ request.url_for('player_profile', name=player.name) }}">{{ player.name }}</a></td>
-                <td class="score">{{ player.score }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="3" class="empty-state">No completed games yet. Rankings will appear here.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-<p class="table-note">One place per player. Your best game counts.</p>
+<section class="hero" aria-labelledby="page-title">
+    <div class="hero-content">
+        <p class="eyebrow">BRICKFALL / LEADERBOARD</p>
+        <h1 id="page-title">Leaderboard</h1>
+        <p class="description">Every brick counts. See who's on top.</p>
+    </div>
+    <div class="card summary-card">
+        <span class="summary-icon" aria-hidden="true">
+            <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="10" cy="9" r="3.2"></circle>
+                <path d="M3.5 21v-1.7a6.5 6.5 0 0 1 13 0V21H3.5Z"></path>
+                <path d="M19 6.2a3 3 0 0 1 0 5.6M18.5 15.2a5.8 5.8 0 0 1 5.5 5.8"></path>
+            </svg>
+        </span>
+        <span class="summary-copy"><span class="summary-label">Players shown</span><strong class="summary-value">{{ players|length }}</strong></span>
+    </div>
+</section>
+<figure class="visual-accent">
+    <div class="visual-accent-image" role="img" aria-label="Black and white architectural grid resembling stacked bricks">
+        <div class="visual-accent-copy"><span>BRICKFALL</span><strong>Clear the grid.</strong></div>
+    </div>
+    <figcaption>Photo by <a href="https://unsplash.com/photos/black-and-white-concrete-building-Chcm0mTg0hU">Ben Allan</a> on <a href="https://unsplash.com/license">Unsplash</a> · Unsplash License</figcaption>
+</figure>
+<section class="card leaderboard-card" aria-labelledby="ranking-title">
+    <div class="card-header">
+        <div><h2 id="ranking-title">Top Players</h2><p class="card-meta">Ranked by best score</p></div>
+        <span class="pill">TOP 10</span>
+    </div>
+    <div class="table-wrap">
+        <table class="leaderboard">
+            <caption class="visually-hidden">Top players and their best scores</caption>
+            <thead>
+                <tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Best Score</th></tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr{% if loop.first %} class="first-place"{% endif %}>
+                    <td class="rank">{{ "%02d"|format(loop.index) }}</td>
+                    <td>
+                        <span class="player-cell">
+                            <a class="player-link" href="{{ request.url_for('player_profile', name=player.name) }}">{{ player.name }}</a>
+                            {% if loop.first %}<span class="leader-label">Leader</span>{% endif %}
+                        </span>
+                    </td>
+                    <td class="score">{{ player.score }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="empty-cell"><div class="empty-state"><strong>No scores yet</strong><p>Completed games will appear here.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="card-footer">Only your best score counts.</p>
+</section>
 {% endblock %}

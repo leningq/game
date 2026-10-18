@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Brickfall{% endblock %}</title>
-    <link rel="stylesheet" href="{{ request.url_for('static', path='style.css') }}">
+    <link rel="stylesheet" href="{{ request.url_for('static', path='style.css') }}?v=d33e466e17a1">
 </head>
 <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
         <div class="header-content">
-            <a class="brand" href="/" aria-label="Brickfall home">BRICKFALL</a>
-            <nav aria-label="Main navigation">
+            <a class="brand" href="/" aria-label="Brickfall home"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>BRICKFALL</span></a>
+            <nav class="site-nav" aria-label="Main navigation">
                 <a href="/" {% if request.url.path == '/' %}aria-current="page"{% elif request.url.path.startswith('/players/') %}class="section-current"{% endif %}>Leaderboard</a>
                 <a href="/rules" {% if request.url.path == '/rules' %}aria-current="page"{% endif %}>Rules</a>
             </nav>
@@ -20,6 +20,7 @@
     <main id="main">
         {% block content %}{% endblock %}
     </main>
-    <footer class="site-footer"><span>Brickfall</span><span>Three levels. Every brick counts.</span></footer>
+    <footer class="site-footer"><div class="footer-content"><span>BRICKFALL</span><span>Three levels. Every brick counts.</span></div></footer>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

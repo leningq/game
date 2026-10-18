@@ -1,16 +1,32 @@
 {% extends "base.html" %}
 {% block title %}Rules · Brickfall{% endblock %}
 {% block content %}
-<div class="page-heading">
-    <h1>Rules</h1>
-    <p class="description">Keep the ball in play. Clear every brick.</p>
-</div>
-<div class="rules-content">
-    <section class="rules-section">
-        <h2>The goal</h2>
-        <div><p>Bounce the ball with your paddle and clear all three levels. You start with three lives; each missed ball costs one. Every brick earns 10 points.</p><p>Sign in inside the game to save your progress and send your completed games to the leaderboard.</p></div>
+<section class="rules-hero" aria-labelledby="rules-title">
+    <div class="rules-hero-copy">
+        <p class="rules-kicker">BRICKFALL / GAME GUIDE</p>
+        <h1 id="rules-title">Master the game.</h1>
+        <p class="rules-intro">Learn the controls, clear the bricks and reach level three.</p>
+    </div>
+    <div class="rules-geometry" aria-hidden="true">
+        <div class="rules-bricks">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="rules-ball"></span>
+        <span class="rules-paddle"></span>
+    </div>
+</section>
+<div class="rules-layout">
+    <section class="card rules-card goal-card">
+        <h2>Goal</h2>
+        <p>Bounce the ball with your paddle and clear all three levels. You start with three lives; each missed ball costs one. Every brick earns 10 points.</p>
     </section>
-    <section class="rules-section">
+    <section class="card rules-card levels-card">
+        <h2>Three levels</h2>
+        <p>Each level has a different brick layout. The ball gets faster as you advance. Clear the third level to win.</p>
+    </section>
+    <section class="card rules-card controls-card">
         <h2>Controls</h2>
         <dl class="controls">
             <div><dt><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd></dt><dd>Move the paddle</dd></div>
@@ -21,11 +37,18 @@
             <div><dt><kbd>F9</kbd></dt><dd>Load your saved game from the menu or pause screen</dd></div>
         </dl>
     </section>
-    <section class="rules-section">
-        <h2>Two small twists</h2>
+    <section class="card rules-card mechanics-card">
+        <h2>Special abilities</h2>
         <div class="mechanics">
             <div><h3>A narrower paddle</h3><p>Every five destroyed bricks make the paddle narrower for three seconds. It then returns to its normal width.</p></div>
             <div><h3>A moment to slow down</h3><p>Press Shift while the ball is moving to slow it for three seconds. You get one use per level. Losing a life does not restore it.</p></div>
+        </div>
+    </section>
+    <section class="card rules-card saving-card">
+        <h2>Saving &amp; leaderboard</h2>
+        <div class="mechanics">
+            <div><h3>Save your progress</h3><p>Sign in inside the game to save your current game and load it later.</p></div>
+            <div><h3>Join the leaderboard</h3><p>Completed games are sent to the ranking. Only your best score counts.</p></div>
         </div>
     </section>
 </div>

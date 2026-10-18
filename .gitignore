@@ -1,5 +1,4 @@
-.venv/
-.venv312/
+.venv*/
 venv/
 __pycache__/
 *.py[cod]
@@ -18,5 +17,12 @@ data/
 *.sqlite3-*
 *.log
 *.tmp
+*.bak
+*.swp
+*.pem
+*.key
+*.p12
+*.pfx
+docs/visual-qa/
 .DS_Store
 Thumbs.db
