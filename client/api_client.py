@@ -11,7 +11,6 @@ class ApiError(Exception):
 
 
 class ApiClient:
-    # Токен хранится только в памяти, пароль не записывается в файл.
     def __init__(self, base_url=None, timeout=3):
         self.base_url = (base_url or os.getenv("BRICKFALL_API_URL", "http://127.0.0.1:8000")).rstrip("/")
         self.timeout = timeout

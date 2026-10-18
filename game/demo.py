@@ -4,7 +4,6 @@ from .logic import BALL_RADIUS, Rectangle
 
 
 class MenuDemo:
-    # Небольшая самостоятельная физическая сцена для меню, без Pygame.
     WIDTH, HEIGHT = 360, 362
 
     def __init__(self):
@@ -45,8 +44,6 @@ class MenuDemo:
             if self.reset_timer <= 0:
                 self.reset()
             return
-        # Автоплатформа следит за мячом с ограниченной скоростью.
-        # Смещение точки прицеливания меняет угол и не даёт мячу летать по одной линии.
         aim_offset = 18 if self.hits % 2 == 0 else -18
         target = self.ball_x + aim_offset
         distance = target - self.paddle.centerx
@@ -71,7 +68,6 @@ class MenuDemo:
             if self.paddle.touches_ball(self.ball_x, self.ball_y) and self.ball_speed_y > 0:
                 self.ball_y = self.paddle.top - BALL_RADIUS - 0.01
                 angle = (self.ball_x - self.paddle.centerx) / (self.paddle.width / 2) * 0.95
-                # Минимальный боковой угол делает демонстрацию разнообразнее.
                 if abs(angle) < 0.2:
                     angle = 0.2 if self.hits % 2 else -0.2
                 self.ball_speed_x = speed * math.sin(angle)

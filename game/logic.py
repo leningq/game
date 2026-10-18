@@ -2,7 +2,6 @@ import math
 import re
 import uuid
 
-# Логика игры использует только стандартный Python, без Pygame.
 WIDTH, HEIGHT = 900, 600
 FIELD_LEFT, FIELD_RIGHT = 24, 876
 FIELD_TOP, FIELD_BOTTOM = 96, 556
@@ -44,7 +43,6 @@ class Rectangle:
         return self.y + self.height / 2
 
     def touches_ball(self, x, y):
-        # Проверяем расстояние до ближайшей точки прямоугольника.
         nearest_x = max(self.left, min(self.right, x))
         nearest_y = max(self.top, min(self.bottom, y))
         return (x - nearest_x) ** 2 + (y - nearest_y) ** 2 < BALL_RADIUS ** 2
@@ -57,7 +55,6 @@ class Game:
         self.state = "menu"
 
     def start(self):
-        # Новая попытка получает отдельный идентификатор для результата.
         self.run_id = uuid.uuid4().hex
         self.score = 0
         self.lives = 3
@@ -88,7 +85,6 @@ class Game:
         self.ball_y = self.paddle.top - BALL_RADIUS - 2
 
     def reset_ball(self):
-        # Потеря жизни снимает эффекты, но не возвращает заряд Shift.
         self.paddle.width = PADDLE_WIDTH
         self.paddle.x = (WIDTH - PADDLE_WIDTH) / 2
         self.shrink_timer = 0.0
@@ -134,7 +130,6 @@ class Game:
             self.resize_paddle(width)
 
     def bounce_off_rect(self, rect, old_x, old_y):
-        # Предыдущее положение определяет грань удара.
         if old_y + BALL_RADIUS <= rect.top:
             side = 0
         elif old_y - BALL_RADIUS >= rect.bottom:
@@ -149,7 +144,6 @@ class Game:
                          abs(self.ball_x + BALL_RADIUS - rect.left),
                          abs(rect.right - self.ball_x + BALL_RADIUS))
             side = distances.index(min(distances))
-        # Зазор не позволяет мячу застрять и повторно ударить ту же грань.
         if side == 0:
             self.ball_y = rect.top - BALL_RADIUS - 0.01
             self.ball_speed_y = -abs(self.ball_speed_y)
@@ -177,7 +171,6 @@ class Game:
     def move_ball(self, dt):
         speed = math.hypot(self.ball_speed_x, self.ball_speed_y)
         multiplier = 0.55 if self.slow_timer > 0 else 1.0
-        # Малые шаги предотвращают пролёт сквозь тонкие кирпичи.
         steps = max(1, math.ceil(speed * dt / (BALL_RADIUS * 0.75)))
         step_time = dt / steps
         for _ in range(steps):
@@ -201,7 +194,6 @@ class Game:
                 self.ball_speed_x = speed * math.sin(angle)
                 self.ball_speed_y = -speed * math.cos(angle)
             else:
-                # За один шаг отражаем мяч только от одного кирпича.
                 for brick in self.bricks:
                     if brick.touches_ball(self.ball_x, self.ball_y):
                         self.bounce_off_rect(brick, old_x, old_y)
@@ -222,7 +214,6 @@ class Game:
         self.hit_events.clear()
         if self.state != "playing":
             return
-        # Ограничиваем кадр после подвисания окна.
         dt = max(0.0, min(dt, 1 / 30))
         if dt == 0:
             return
@@ -241,7 +232,6 @@ class Game:
             self.move_ball(dt)
 
     def to_dict(self):
-        # Храним индексы исходного уровня, а не произвольные прямоугольники.
         if self.state not in ("playing", "paused"):
             raise ValueError("Only unfinished games can be saved")
         layout = self.create_bricks()
@@ -261,7 +251,6 @@ class Game:
 
     @classmethod
     def from_dict(cls, data):
-        # Сервер и клиент одинаково проверяют загруженную партию.
         def fields(value, expected):
             if not isinstance(value, dict) or set(value) != set(expected.split()):
                 raise ValueError("Invalid save fields")

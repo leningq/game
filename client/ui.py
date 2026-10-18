@@ -4,7 +4,6 @@ from pathlib import Path
 import pygame
 
 
-# Спокойная палитра. Весь визуал рисуется фигурами, без внешних картинок.
 BG = (13, 20, 26)
 PANEL = (20, 29, 36)
 LINE = (43, 58, 65)
@@ -18,7 +17,6 @@ fonts = {}
 button_progress = {}
 demo_visibility = 1.0
 def initialize_fonts():
-    # SysFont на Windows может выбрать Segoe UI Light, поэтому указываем начертание.
     font_dir = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
     for name, size, bold in (
         ("title", 72, True), ("heading", 36, True), ("number", 26, True),
@@ -39,7 +37,6 @@ def text(surface, value, pos, size="small", color=TEXT, center=False):
 
 
 def pygame_rect(rect):
-    # Перевод числового прямоугольника из game/ в объект для рисования.
     return pygame.Rect(round(rect.x), round(rect.y), round(rect.width), round(rect.height))
 
 
@@ -61,7 +58,6 @@ def draw_button(surface, rect, label, shortcut="", primary=False, selected=False
 
 def draw_base(surface):
     surface.fill(BG)
-    # Едва заметные точки вместо шумного фонового изображения.
     for x in range(28, 900, 32):
         for y in range(100, 554, 32):
             pygame.draw.circle(surface, (25, 36, 43), (x, y), 1)
@@ -87,7 +83,6 @@ def draw_paddle(surface, rect, shrunken=False):
 
 def draw_ball(surface, x, y, radius, trail, slowed=False):
     color = GOLD if slowed else MINT
-    # Короткий след показывает направление и не закрывает кирпичи.
     trail_color = tuple(round(BG[c] + (color[c] - BG[c]) * 0.3) for c in range(3))
     for index, (trail_x, trail_y) in enumerate(trail):
         trail_radius = max(1, round(radius * (index + 1) / (len(trail) + 2)))
@@ -108,7 +103,6 @@ def draw_particles(surface, particles):
 
 def update_animations(state, selected_button, dt, demo_resetting=False, mouse_pos=None):
     global demo_visibility
-    # Небольшая интерполяция вместо резкого включения подсветки.
     step = min(1.0, max(0.0, dt) / 0.12)
     mouse_pos = pygame.mouse.get_pos() if mouse_pos is None else mouse_pos
     for index, (action, rect) in enumerate(buttons_for_state(state).items()):
@@ -125,13 +119,11 @@ def draw_game_background(surface):
     draw_base(surface)
     pygame.draw.rect(surface, PANEL, (24, 18, 852, 68), border_radius=12)
     pygame.draw.rect(surface, LINE, (24, 18, 852, 68), 1, border_radius=12)
-    # Нижняя сторона открыта: за ней игрок теряет жизнь.
     pygame.draw.line(surface, LINE, (24, 96), (876, 96))
     pygame.draw.line(surface, LINE, (24, 96), (24, 556))
     pygame.draw.line(surface, LINE, (876, 96), (876, 556))
 
 
-# Кнопки используют те же координаты для рисования и обработки мыши.
 MENU_BUTTONS = {action: pygame.Rect(52, 280 + index * 40, 336, 36)
                 for index, action in enumerate(("continue", "start", "load", "controls", "account", "exit"))}
 PAUSE_BUTTONS = {action: pygame.Rect(286, 270 + index * 50, 328, 40)
@@ -275,7 +267,6 @@ def draw_auth(surface, state, username, password, active_field, busy):
         text(surface, label, (rect.x, rect.y - 26), "small", MUTED)
         pygame.draw.rect(surface, PANEL, rect, border_radius=6)
         pygame.draw.rect(surface, MINT if index == active_field else LINE, rect, 1, border_radius=6)
-        # Показываем конец длинного ввода, чтобы курсор всегда был виден.
         value += "|" if index == active_field and not busy else ""
         image = fonts["body"].render(value, True, TEXT)
         inner = rect.inflate(-24, -4)
@@ -305,7 +296,6 @@ def draw_status(surface, message, error=False):
         else:
             line = candidate
     lines.append(line)
-    # Статус занимает максимум две строки и не закрывает кнопки авторизации.
     if len(lines) > 2:
         lines[1] = " ".join(lines[1:])
     lines = lines[:2]

@@ -33,7 +33,6 @@ class ClientTests(unittest.TestCase):
         client.handle_event(pygame.event.Event(pygame.TEXTINPUT, text=value))
 
     def finish_request(self):
-        # Ждём только фоновую тестовую функцию, затем обрабатываем результат в окне.
         client.pending.result(timeout=2)
         client.poll_request()
 
@@ -160,7 +159,6 @@ class ClientTests(unittest.TestCase):
         self.assertLess(time.monotonic() - started, 1)
         self.assertEqual(client.game.state, "menu")
         self.assertFalse(future.done())
-        # Даже повторное открытие формы не принимает ответ отменённого входа.
         self.assertFalse(client.require_login())
         future.set_result({"username": "Student", "token": "cancelled-session"})
         client.poll_request()
@@ -171,7 +169,6 @@ class ClientTests(unittest.TestCase):
     def test_resized_window_keeps_buttons_clickable(self):
         client.api.token = "test-session"
         client.perform_action("start")
-        # Те же видимые кнопки должны работать и в небольшом окне, и с полями по бокам.
         for size, point in (((720, 480), (642, 40)),
                             ((1200, 800), (1069, 67)),
                             ((1280, 720), (1062, 60))):

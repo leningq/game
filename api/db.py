@@ -21,7 +21,6 @@ def connection():
     database.row_factory = sqlite3.Row
     database.execute("PRAGMA foreign_keys = ON")
     try:
-        # Этот блок сохраняет изменения или отменяет их при ошибке.
         with database:
             yield database
     finally:
@@ -58,7 +57,6 @@ def init_db():
 
 
 def password_hash(password, salt):
-    # Соль делает хеши одинаковых паролей разными.
     return hashlib.pbkdf2_hmac(
         "sha256", password.encode("utf-8"), bytes.fromhex(salt), PASSWORD_ITERATIONS
     ).hex()
@@ -114,7 +112,6 @@ def session_user(token):
 
 def add_score(user_id, run_id, score):
     with connection() as database:
-        # У одной попытки может быть только один окончательный результат.
         database.execute(
             "INSERT INTO scores (user_id, run_id, score) VALUES (?, ?, ?) "
             "ON CONFLICT(user_id, run_id) DO NOTHING", (user_id, run_id, score),

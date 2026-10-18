@@ -73,7 +73,6 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(
             self.client.get("/saves", headers={"Authorization": "Bearer invalid"}).status_code, 401
         )
-        # Повторный запуск приложения не отменяет действующий токен.
         with TestClient(app) as restarted:
             self.assertEqual(restarted.get("/saves", headers=self.headers).status_code, 404)
         with db.connection() as database:
@@ -96,7 +95,6 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.submit(100, "bad").status_code, 400)
 
     def test_top_ten_unique_players(self):
-        # Данные для проверки создаются только во временной тестовой базе.
         for index in range(12):
             user = db.register_user(f"Test{index:02}", "school-password")
             db.add_score(user["id"], "first-run-0000000", index * 10)

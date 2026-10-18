@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pygame
 
-# Прямой запуск файла тоже должен находить соседние папки.
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -69,7 +68,6 @@ def poll_request():
     future = pending
     pending = None
     pending_action = None
-    # Ответ покинутой формы не должен открывать её заново.
     if action in ("login", "register") and (auth_cancelled or game.state not in ("login", "register")):
         return
     try:
@@ -114,7 +112,6 @@ def require_login():
 
 
 def register_and_login(username, password):
-    # После создания аккаунта сразу получаем обычный токен входа.
     api.register(username, password)
     return api.login(username, password)
 
@@ -161,7 +158,6 @@ def perform_action(action):
     if action in ("login", "register"):
         if pending is not None:
             return
-        # Переключение формы сохраняет уже введённые данные и фокус.
         game.state = action
         pygame.key.start_text_input()
         show_status("Username: 3-20 letters, numbers, _ or -. Password: 8-128 characters.")
@@ -221,7 +217,6 @@ def viewport():
 
 
 def game_position(position):
-    # Мышь переводим из размеров окна в координаты игрового поля.
     area = viewport()
     return ((position[0] - area.x) * WIDTH / area.width,
             (position[1] - area.y) * HEIGHT / area.height)
@@ -340,7 +335,6 @@ def update(dt):
     update_effects(dt)
     if game.state in ("game_over", "win"):
         has_run = False
-        # Один автоматический запрос на попытку. Повтор после ошибки только по кнопке.
         if not score_state and api.token and pending is None:
             if begin_request("score", api.send_score, game.score, game.run_id):
                 score_state = "pending"
@@ -375,7 +369,6 @@ def initialize():
     global password_input, username_input, active_field, auth_cancelled
     pygame.display.init()
     pygame.font.init()
-    # Физика и интерфейс сохраняют координаты, а окно можно менять.
     pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
     screen = pygame.Surface((WIDTH, HEIGHT)).convert()
     pygame.display.set_caption("Brickfall")

@@ -36,7 +36,6 @@ def main():
     log_path = ROOT / "data" / "server.log"
     log_path.parent.mkdir(exist_ok=True)
     log_file = log_path.open("a", encoding="utf-8")
-    # Сервер запускается из папки проекта, чтобы импорты и база находились правильно.
     server = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "api.main:app",
          "--host", "127.0.0.1", "--port", "8000"],

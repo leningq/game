@@ -41,7 +41,6 @@ class IntegrationTests(unittest.TestCase):
         client.poll_request()
 
     def test_real_http_server_and_pygame_client(self):
-        # Полный путь через события Pygame и настоящий HTTP, с временной базой.
         with tempfile.TemporaryDirectory() as folder:
             with socket.socket() as listener:
                 listener.bind(("127.0.0.1", 0))
@@ -89,7 +88,6 @@ class IntegrationTests(unittest.TestCase):
                 self.press(pygame.K_ESCAPE)
                 self.click("account")
                 self.assertIsNone(api.token)
-                # Тот же аккаунт входит повторно; регистр имени не имеет значения.
                 self.click("account")
                 self.type_field(0, "liveplayer", clear=True)
                 self.type_field(1, "school-practice")

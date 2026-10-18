@@ -76,7 +76,6 @@ class BrickfallTests(unittest.TestCase):
         game.update(1 / 30, 1)
         self.assertEqual(game.to_dict(), before)
         game.toggle_pause()
-        # Безопасная траектория позволяет проверить ровно три секунды.
         game.ball_y = 400
         game.ball_speed_x, game.ball_speed_y = 150, 0
         game.paddle.x = FIELD_RIGHT - game.paddle.width

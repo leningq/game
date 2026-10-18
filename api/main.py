@@ -110,7 +110,6 @@ def stats(name: str):
 @app.put("/saves")
 def save(body: dict = Body(...), user: dict = Depends(current_user)):
     try:
-        # Проверяем те же правила состояния, что и при загрузке в самой игре.
         state = Game.from_dict(body).to_dict()
     except (ValueError, TypeError, KeyError, OverflowError):
         raise HTTPException(400, "Invalid game save.")
