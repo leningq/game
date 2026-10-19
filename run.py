@@ -1,5 +1,3 @@
-"""Start the local Brickfall server and then open the game window."""
-
 import json
 import os
 import socket
